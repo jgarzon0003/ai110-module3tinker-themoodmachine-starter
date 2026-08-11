@@ -50,6 +50,8 @@ SAMPLE_POSTS = [
     "This is fine",
     "So excited for the weekend",
     "I am not happy about this",
+    "I feel awful today",
+    "The movie made was boring, it was relaxed "
 ]
 
 # Human labels for each post above.
@@ -65,6 +67,8 @@ TRUE_LABELS = [
     "neutral",   # "This is fine"
     "positive",  # "So excited for the weekend"
     "negative",  # "I am not happy about this"
+    "negative",  # "I feel awful today"
+    "mixed",  # "The movie made was boring, it was relaxed "
 ]
 
 # TODO: Add 5-10 more posts and labels.
@@ -92,3 +96,27 @@ TRUE_LABELS = [
 #
 # Remember to keep them aligned:
 #   len(SAMPLE_POSTS) == len(TRUE_LABELS)
+
+def add_post(post, label):
+    """Append a post/label pair, but only if the lists are currently aligned."""
+    if len(SAMPLE_POSTS) != len(TRUE_LABELS):
+        raise ValueError(
+            f"SAMPLE_POSTS ({len(SAMPLE_POSTS)}) and TRUE_LABELS "
+            f"({len(TRUE_LABELS)}) are out of sync; fix them before adding more."
+        )
+    SAMPLE_POSTS.append(post)
+    TRUE_LABELS.append(label)
+
+
+add_post("Lowkey stressed but kind of happy with myself", "mixed")  # stressed + happy
+add_post("no cap this is an amazing day :)", "positive")  # amazing
+# sarcasm — "love" + "terrible" reads mixed by word count, but the tone is fully negative
+add_post("I absolutely love how terrible this traffic is", "negative")
+add_post("highkey tired but the concert was so fun 😂", "mixed")  # tired + fun
+# edge case: no list words present, tone is genuinely ambiguous
+add_post("i guess today happened", "neutral")
+add_post("missing my dog so much, feeling sad rn 🥲", "negative")  # sad
+# edge case: no list words present, relief vs. exhaustion is hard to call
+add_post("just finished the exam, no thoughts head empty", "neutral")
+add_post("this meeting was so boring, could've been an email 💀", "negative")  # boring
+add_post("weirdly relaxed even though everything feels bad right now", "mixed")  # relaxed + bad
