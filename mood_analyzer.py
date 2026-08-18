@@ -12,7 +12,7 @@ This class starts with very simple logic:
 import re
 from typing import List, Dict, Tuple, Optional
 
-from dataset import POSITIVE_WORDS, NEGATIVE_WORDS
+from dataset import POSITIVE_WORDS, NEGATIVE_WORDS, SARCASM_CUES
 
 REPEATED_CHAR_RE = re.compile(r"(.)\1{2,}")
 
@@ -26,14 +26,17 @@ class MoodAnalyzer:
         self,
         positive_words: Optional[List[str]] = None,
         negative_words: Optional[List[str]] = None,
+        sarcasm_cues: Optional[List[str]] = None,
     ) -> None:
         # Use the default lists from dataset.py if none are provided.
         positive_words = positive_words if positive_words is not None else POSITIVE_WORDS
         negative_words = negative_words if negative_words is not None else NEGATIVE_WORDS
+        sarcasm_cues = sarcasm_cues if sarcasm_cues is not None else SARCASM_CUES
 
         # Store as sets for faster lookup.
         self.positive_words = set(w.lower() for w in positive_words)
         self.negative_words = set(w.lower() for w in negative_words)
+        self.sarcasm_cues = set(w.lower() for w in sarcasm_cues)
 
     # ---------------------------------------------------------------------
     # Preprocessing
@@ -88,12 +91,23 @@ class MoodAnalyzer:
         tokens = self.preprocess(text)
         negations = {"not", "no", "never", "n't"}
 
+        # If a positive word shows up next to a word describing an inherently
+        # unpleasant situation (e.g. "love" + "traffic"), treat it as sarcasm:
+        # the positive word is flipped to count against the score instead of
+        # for it.
+        sarcastic = any(token in self.sarcasm_cues for token in tokens)
+
         score = 0
         for i, token in enumerate(tokens):
             negated = i > 0 and tokens[i - 1] in negations
 
             if token in self.positive_words:
-                score += -1 if negated else 1
+                if negated:
+                    score -= 1
+                elif sarcastic:
+                    score -= 1
+                else:
+                    score += 1
             elif token in self.negative_words:
                 score += 1 if negated else -1
 
@@ -149,21 +163,38 @@ class MoodAnalyzer:
         before you implement it.
         """
         tokens = self.preprocess(text)
+        negations = {"not", "no", "never", "n't"}
+
+        sarcasm_hits = [t for t in tokens if t in self.sarcasm_cues]
+        sarcastic = bool(sarcasm_hits)
 
         positive_hits: List[str] = []
         negative_hits: List[str] = []
-        score = 0
+        flipped_hits: List[str] = []
+        score = self.score_text(text)
 
-        for token in tokens:
+        for i, token in enumerate(tokens):
+            negated = i > 0 and tokens[i - 1] in negations
+
             if token in self.positive_words:
-                positive_hits.append(token)
-                score += 1
-            if token in self.negative_words:
-                negative_hits.append(token)
-                score -= 1
+                if negated or sarcastic:
+                    flipped_hits.append(token)
+                else:
+                    positive_hits.append(token)
+            elif token in self.negative_words:
+                if negated:
+                    flipped_hits.append(token)
+                else:
+                    negative_hits.append(token)
 
-        return (
+        explanation = (
             f"Score = {score} "
             f"(positive: {positive_hits or '[]'}, "
-            f"negative: {negative_hits or '[]'})"
+            f"negative: {negative_hits or '[]'}, "
+            f"flipped by negation/sarcasm: {flipped_hits or '[]'})"
         )
+
+        if sarcastic:
+            explanation += f" [sarcasm cue detected: {sarcasm_hits}]"
+
+        return explanation

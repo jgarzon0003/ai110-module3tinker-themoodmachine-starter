@@ -38,6 +38,26 @@ NEGATIVE_WORDS = [
     "boring",
 ]
 
+# Words describing situations that are almost always unpleasant. When one of
+# these shows up alongside a positive word (e.g. "love getting stuck in
+# traffic"), the positive word is more likely sarcasm than genuine positivity.
+SARCASM_CUES = [
+    "traffic",
+    "homework",
+    "monday",
+    "mondays",
+    "meeting",
+    "meetings",
+    "dentist",
+    "taxes",
+    "alarm",
+    "exam",
+    "exams",
+    "waiting",
+    "queue",
+    "line",
+]
+
 # ---------------------------------------------------------------------
 # Starter labeled dataset
 # ---------------------------------------------------------------------
